@@ -1,0 +1,36 @@
+# Enable HA mode
+enableHA: true
+
+# Scale up etcd
+etcd:
+  replicas: 3
+
+# Scale up controller manager
+controller:
+  replicas: 3
+
+# Scale up api server
+api:
+  replicas: 3
+
+# Scale up k3s replicas
+replicas: 3
+
+# Set external datastore endpoint
+#vcluster:
+#  env:
+#    - name: K3S_DATASTORE_ENDPOINT
+#      value: mysql://username:password@tcp(hostname:3306)/database-name
+
+# Disable persistent storage as all data (including bootstrap data) is stored in external datastore
+#storage:
+#  persistence: false
+
+# Scale up CoreDNS replicas
+coredns:
+  replicas: 3
+
+# Scale up syncer replicas
+syncer:
+  replicas: 3
+

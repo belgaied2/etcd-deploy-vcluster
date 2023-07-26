@@ -1,0 +1,24 @@
+# Enable HA mode
+enableHA: true
+
+# Scale up k3s replicas
+replicas: 3
+
+# Set external datastore endpoint
+vcluster:
+  env:
+    - name: K3S_DATASTORE_ENDPOINT
+      value: k3s-ha-etcd-0=https://k3s-ha-etcd-0.k3s-ha-etcd-headless.vcluster-k3s-ha:2380,k3s-ha-etcd-1=https://k3s-ha-etcd-1.k3s-ha-etcd-headless.vcluster-k3s-ha:2380,k3s-ha-etcd-2=https://k3s-ha-etcd-2.k3s-ha-etcd-headless.vcluster-k3s-ha:2380
+
+# Disable persistent storage as all data (including bootstrap data) is stored in external datastore
+storage:
+  persistence: false
+
+# Scale up CoreDNS replicas
+coredns:
+  replicas: 3
+
+# Scale up syncer replicas
+syncer:
+  replicas: 3
+

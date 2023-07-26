@@ -1,0 +1,155 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: k3s-ha-etcd
+  namespace: vcluster-k3s-ha
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: vcluster-etcd
+      release: k3s-ha
+  serviceName: k3s-ha-etcd-headless
+  template:
+    metadata:
+      labels:
+        app: vcluster-etcd
+        release: k3s-ha
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - vcluster-etcd
+                - key: release
+                  operator: In
+                  values:
+                  - k3s-ha
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - vcluster-etcd
+                - key: release
+                  operator: In
+                  values:
+                  - k3s-ha
+              topologyKey: topology.kubernetes.io/zone
+            weight: 50
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - etcd
+        - --cert-file=/run/config/pki/etcd-server.crt
+        - --client-cert-auth=true
+        - --data-dir=/var/lib/etcd
+        - --advertise-client-urls=https://$(NAME).k3s-ha-etcd-headless.vcluster-k3s-ha:2379
+        - --initial-advertise-peer-urls=https://$(NAME).k3s-ha-etcd-headless.vcluster-k3s-ha:2380
+        - --initial-cluster=k3s-ha-etcd-0=https://k3s-ha-etcd-0.k3s-ha-etcd-headless.vcluster-k3s-ha:2380,k3s-ha-etcd-1=https://k3s-ha-etcd-1.k3s-ha-etcd-headless.vcluster-k3s-ha:2380,k3s-ha-etcd-2=https://k3s-ha-etcd-2.k3s-ha-etcd-headless.vcluster-k3s-ha:2380
+        - --initial-cluster-token=k3s-ha
+        - --initial-cluster-state=new
+        - --listen-client-urls=https://0.0.0.0:2379
+        - --listen-metrics-urls=http://0.0.0.0:2381
+        - --listen-peer-urls=https://0.0.0.0:2380
+        - --key-file=/run/config/pki/etcd-server.key
+        - --name=$(NAME)
+        - --peer-cert-file=/run/config/pki/etcd-peer.crt
+        - --peer-client-cert-auth=true
+        - --peer-key-file=/run/config/pki/etcd-peer.key
+        - --peer-trusted-ca-file=/run/config/pki/etcd-ca.crt
+        - --snapshot-count=10000
+        - --trusted-ca-file=/run/config/pki/etcd-ca.crt
+        env:
+        - name: NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        image: registry.k8s.io/etcd:3.5.6-0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            path: /health
+            port: 2381
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: etcd
+        resources:
+          requests:
+            cpu: 20m
+            memory: 150Mi
+        securityContext: {}
+        startupProbe:
+          failureThreshold: 24
+          httpGet:
+            path: /health
+            port: 2381
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/etcd
+          name: data
+        - mountPath: /run/config/pki
+          name: certs
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: vc-k3s-ha
+      serviceAccountName: vc-k3s-ha
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: certs
+        secret:
+          defaultMode: 420
+          secretName: k3s-ha-certs
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      volumeMode: Filesystem
+    status:
+      phase: Pending
+status:
+  availableReplicas: 3
+  collisionCount: 0
+  currentReplicas: 3
+  currentRevision: k3s-ha-etcd-86bb88944f
+  observedGeneration: 1
+  readyReplicas: 3
+  replicas: 3
+  updateRevision: k3s-ha-etcd-86bb88944f
+  updatedReplicas: 3

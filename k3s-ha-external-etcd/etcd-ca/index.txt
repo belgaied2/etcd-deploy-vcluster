@@ -1,0 +1,4 @@
+V	330702114236Z		01	unknown	/O=ovhcloud/CN=k3s-ha-etcd.vcluster-k3s-ha
+V	330702115224Z		02	unknown	/O=ovhcloud/CN=k3s-ha-etcd-0.vcluster-k3s-ha
+V	330702115424Z		03	unknown	/O=ovhcloud/CN=etcd-client
+V	330702143331Z		05	unknown	/O=ovhcloud/CN=etcd-peer
